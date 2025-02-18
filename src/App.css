@@ -1,0 +1,158 @@
+/* Topic Card Styles */
+.topic-card {
+  @apply bg-white transition-all duration-300
+         border-2 border-gray-100 hover:border-indigo-300
+         cursor-pointer transform hover:-translate-y-1 hover:shadow-xl;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.topic-card:hover {
+  box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.2);
+}
+
+.topic-icon {
+  @apply w-12 h-12 rounded-full mb-4 p-2.5
+         bg-gradient-to-br from-indigo-500 to-purple-600
+         text-white flex items-center justify-center;
+}
+
+.topic-title {
+  @apply text-xl font-semibold mb-2 text-gray-800;
+  background: linear-gradient(to right, #4F46E5, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.topic-description {
+  @apply text-gray-600 text-sm leading-relaxed;
+}
+
+/* Question Card Layout */
+.question-card {
+  @apply bg-white rounded-2xl shadow-xl p-8 mx-auto my-6 max-w-4xl
+         transform transition-all duration-500;
+  min-height: 500px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+.question-layout {
+  @apply flex flex-col gap-8;
+}
+
+.question-content {
+  @apply flex-1 relative;
+}
+
+/* Question Text */
+.question-text {
+  @apply font-medium text-gray-800 mb-8 p-8
+         bg-gradient-to-br from-gray-50 to-white
+         rounded-xl border border-gray-100 shadow-sm;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(18px, calc(18px + (28 - 18) * ((100vw - 300px) / (1600 - 300))), 28px);
+  line-height: 1.6;
+}
+
+.options-container {
+  @apply grid gap-5 mt-8;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Input Field Styles */
+.input {
+  @apply px-5 py-4 rounded-xl border-2 border-gray-200 
+         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 
+         transition-all duration-300 text-lg;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* Animations */
+@keyframes correctPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); box-shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes incorrectShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Article Card Styles */
+.article-card {
+  @apply bg-white rounded-xl p-6 transition-all duration-300
+         border-2 border-gray-100 hover:border-purple-300
+         cursor-pointer transform hover:-translate-y-1;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.article-card:hover {
+  box-shadow: 0 15px 35px -15px rgba(124, 58, 237, 0.2);
+}
+
+.article-header {
+  @apply flex items-start gap-4 mb-4;
+}
+
+.article-icon {
+  @apply w-10 h-10 rounded-lg p-2
+         bg-gradient-to-br from-purple-500 to-indigo-600
+         text-white flex items-center justify-center shrink-0;
+}
+
+.article-title {
+  @apply text-xl font-semibold text-gray-800 mb-2
+         bg-gradient-to-r from-purple-600 to-indigo-600;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.article-preview {
+  @apply text-gray-600 text-sm leading-relaxed line-clamp-3;
+}
+
+/* Feedback Display */
+.answer-feedback {
+  @apply flex items-center gap-4 mt-6 p-4 rounded-xl;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.answer-feedback.correct {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  @apply text-green-800;
+}
+
+.answer-feedback.incorrect {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  @apply text-red-800;
+}
