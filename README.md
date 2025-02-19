@@ -18,8 +18,12 @@ This application is designed to help users practice English grammar through a se
   - **Games.js**: Main component for managing game selection and navigation.
   - **components/games/**: Contains individual game components.
     - **GameSelector.js**: Menu interface for selecting different games.
-    - **WordDropChallenge.js**: Interactive game for practicing vocabulary through drag-and-drop.
+    - **Crossroads.js**: Interactive game testing decision-making in English scenarios.
+    - **Dragzilla.js**: Drag-and-drop game for sentence construction.
+    - **IdiomMatcher.js**: Game for learning and matching English idioms.
     - **MarkTheWords.js**: Game for identifying specific types of words in sentences.
+    - **WordDropChallenge.js**: Interactive game for practicing vocabulary through drag-and-drop.
+    - **WordTileGame.js**: Tile-based word arrangement game for sentence building.
 - **graphql/**: Contains GraphQL queries, mutations, and subscriptions.
   - **queries.js**: Defines queries for fetching questions.
   - **mutations.js**: Defines mutations for data modifications.
