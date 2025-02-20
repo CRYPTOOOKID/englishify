@@ -1,50 +1,92 @@
-# Project Title: English Grammar Quiz Application
+# English Grammar Learning Games
 
-## Overview
-This application is designed to help users practice English grammar through a series of questions and interactive games. It utilizes AWS Amplify for backend services and GraphQL for data fetching.
+An interactive web application featuring multiple educational games for learning English grammar, including the Tense Traveler time trials game.
 
-## Directory Structure
+## 🎮 Featured Games
 
-### `src/`
-- **App.js**: The main component that manages the application state and routing.
-- **App.css**: Styles for the main application component.
-- **App.test.js**: Tests for the `App` component.
-- **aws-exports.js**: Automatically generated configuration file for AWS services.
-- **index.js**: The entry point for the React application.
-- **index.css**: Global styles for the application.
-- **components/**: Contains reusable components.
-  - **QuestionView.js**: Displays a question and its options.
-  - **StartPage.js**: The initial screen for topic selection.
-  - **Games.js**: Main component for managing game selection and navigation.
-  - **components/games/**: Contains individual game components.
-    - **GameSelector.js**: Menu interface for selecting different games.
-    - **Crossroads.js**: Interactive game testing decision-making in English scenarios.
-    - **Dragzilla.js**: Drag-and-drop game for sentence construction.
-    - **IdiomMatcher.js**: Game for learning and matching English idioms.
-    - **MarkTheWords.js**: Game for identifying specific types of words in sentences.
-    - **WordDropChallenge.js**: Interactive game for practicing vocabulary through drag-and-drop.
-    - **WordTileGame.js**: Tile-based word arrangement game for sentence building.
-- **graphql/**: Contains GraphQL queries, mutations, and subscriptions.
-  - **queries.js**: Defines queries for fetching questions.
-  - **mutations.js**: Defines mutations for data modifications.
-  - **subscriptions.js**: Defines subscriptions for real-time updates.
+### Tense Traveler Time Trials
+Travel through different historical periods while practicing English verb tenses:
+- Ancient Rome
+- Medieval England
+- Future Space Station
 
-### `public/`
-- **favicon.ico**: The favicon for the application.
-- **index.html**: The main HTML file.
-- **logo192.png**: Application logo.
-- **logo512.png**: High-resolution application logo.
-- **manifest.json**: PWA configuration file.
-- **robots.txt**: Web crawler instructions.
+Each period features unique scenarios and challenges focusing on different verb tenses.
 
-### `tests/`
-- **queryTest.js**: Tests for GraphQL query functionality.
+## 🚀 Getting Started
 
-## Usage
-To start the application, run `npm start` in the terminal. To create a production build, use `npm run build`.
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
 
-## Contributing
-Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
+### Installation
+1. Clone the repository:
+```bash
+git clone [repository-url]
+```
 
-## License
-This project is licensed under the MIT License.
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server:
+```bash
+npm start
+# or
+yarn start
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 🎯 Game Features
+
+### Tense Traveler
+- Multiple historical periods with unique scenarios
+- Progressive difficulty levels
+- Real-time feedback and explanations
+- Score tracking with persistent high scores
+- Educational hints and tense explanations
+- Mobile-responsive design
+
+### How to Play
+1. Select "Tense Traveler" from the game menu
+2. Read each scenario carefully
+3. Choose the correct verb tense for each situation
+4. Learn from feedback and explanations
+5. Progress through different time periods
+6. Try to beat your high score!
+
+## 🛠️ Technologies Used
+- React
+- Framer Motion for animations
+- TailwindCSS for styling
+- LocalStorage for score persistence
+
+## 🧪 Testing
+Run the test suite:
+```bash
+npm test
+# or
+yarn test
+```
+
+## 📚 Project Structure
+```
+src/
+  components/
+    games/
+      TenseTraveler.js      # Main game component
+      TenseTraveler.css     # Game-specific styles
+    Games.js                # Game routing component
+    GameSelector.js         # Game selection menu
+  graphql/                  # API queries and mutations
+  App.js                    # Main application component
+```
+
+## 🤝 Contributing
+Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
+
+## 📝 License
+This project is licensed under the MIT License - see the LICENSE file for details.

@@ -1,111 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html {
-    height: 100%;
-  }
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-  body {
-    @apply min-h-screen bg-gray-50 antialiased;
-    font-family: 'Inter var', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-  }
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+ 
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+ 
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+ 
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+ 
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-  #root {
-    @apply min-h-screen;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+ 
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+ 
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+ 
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+ 
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+ 
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+ 
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+ 
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
 
-@layer components {
-  .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
-  }
+/* Period-specific theme customization */
+.period-ancient-rome {
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 30 54% 95%;
+  --accent: 30 54% 90%;
+}
 
-  .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-light;
-  }
+.period-medieval-england {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 215 20% 95%;
+  --accent: 215 20% 90%;
+}
 
-  .btn-outline {
-    @apply border-2 border-primary text-primary hover:bg-primary hover:text-white;
-  }
+.period-future-space {
+  --primary: 267 84% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 265 20% 95%;
+  --accent: 265 20% 90%;
+}
 
-  .question-card {
-    @apply bg-white rounded-xl shadow-md p-6 mb-8 w-full;
-    min-height: 400px;
-    max-height: 400px;
-    display: flex;
-    flex-direction: column;
-  }
+/* Enhanced animations */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
 
-  .question-text {
-    @apply text-gray-800 font-medium mb-6;
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    font-size: clamp(14px, 5vw, 24px);
-  }
+.animate-shimmer {
+  background-size: 200% 100%;
+  background-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s linear infinite;
+}
 
-  .options-container {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto flex-1;
-    max-height: 220px;
-  }
+/* Time period backgrounds */
+.bg-time-pattern {
+  background-image: var(--time-pattern);
+  background-repeat: repeat;
+  background-size: 60px 60px;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+}
 
-  .option-button {
-    @apply w-full p-3 text-left transition-all duration-200
-           bg-white border border-gray-200 rounded-lg
-           hover:border-indigo-400 hover:shadow-md;
-    font-size: clamp(12px, 3vw, 16px);
-  }
-
-  .option-button.correct {
-    @apply border-green-500 bg-green-50;
-  }
-
-  .option-button.incorrect {
-    @apply border-red-500 bg-red-50;
-  }
-
-  .option-button.disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  .nav-button {
-    @apply px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200;
-  }
-
-  .nav-button-prev {
-    @apply text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50;
-  }
-
-  .nav-button-next {
-    @apply text-white bg-indigo-600 hover:bg-indigo-700;
-  }
-
-  .pro-tip {
-    @apply p-4 bg-blue-50 border border-blue-100 rounded-lg;
-    position: sticky;
-    bottom: 0;
-    margin-top: auto;
-    background-color: rgba(239, 246, 255, 0.95);
-    backdrop-filter: blur(8px);
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+.screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

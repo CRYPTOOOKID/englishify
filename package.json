@@ -5,15 +5,22 @@
   "dependencies": {
     "@aws-amplify/api": "^6.3.0",
     "@aws-amplify/ui-react": "^6.1.5",
+    "@radix-ui/react-hover-card": "^1.1.6",
+    "@shadcn/ui": "^0.0.4",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "aws-amplify": "^6.0.16",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.4.3",
+    "lucide-react": "^0.475.0",
     "react": "^18.2.0",
     "react-confetti": "^6.2.2",
     "react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
     "start": "react-scripts start",
