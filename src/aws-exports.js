@@ -5,7 +5,7 @@ const awsconfig = {
     "aws_appsync_graphqlEndpoint": "https://f2tue2hgcrhvxj7tvelfplchfq.appsync-api.us-east-1.amazonaws.com/graphql",
     "aws_appsync_region": "us-east-1",
     "aws_appsync_authenticationType": "API_KEY",
-    "aws_appsync_apiKey": "da2-stm7uycxmzhcveaqdvxj4a4nci"
+    "aws_appsync_apiKey": "da2-ynk6kwdbl5f2pal4rvoio5bhre"
 };
 
 export default awsconfig;

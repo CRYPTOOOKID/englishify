@@ -428,11 +428,12 @@ const TenseTraveler = ({ onBackToGames }) => {
 
             {showHelp && (
               <HelpPanel>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Read the context and scenario carefully</li>
-                  <li>Choose the correct verb tense</li>
-                  <li>Pay attention to time indicators</li>
-                  <li>Learn from the feedback to improve</li>
+                <p className="mb-4">Journey through history, read each scenario, and select the grammatically correct verb tense option to answer correctly and advance!</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Each time period presents unique scenarios from different historical eras</li>
+                  <li>Read the context and scenario carefully to understand when the action takes place</li>
+                  <li>Choose the correct verb tense that matches the time of the action</li>
+                  <li>Learn from feedback to improve your understanding of verb tenses</li>
                 </ul>
                 <p className="mt-4 text-muted-foreground italic">{getHintMessage()}</p>
               </HelpPanel>

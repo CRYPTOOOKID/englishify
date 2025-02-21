@@ -6,6 +6,7 @@ import Dragzilla from './games/Dragzilla';
 import WordTileGame from './games/WordTileGame';
 import Crossroads from './games/Crossroads';
 import TenseTraveler from './games/TenseTraveler';
+import TalkToMe from './games/TalkToMe';
 
 const Games = ({ onBackToStart, initialGame }) => {
   const [selectedGame, setSelectedGame] = useState(initialGame || null);
@@ -35,6 +36,9 @@ const Games = ({ onBackToStart, initialGame }) => {
   }
   if (selectedGame === 'tenseTraveler') {
     return <TenseTraveler onBackToGames={handleBackToGames} />;
+  }
+  if (selectedGame === 'talkToMe') {
+    return <TalkToMe onBackToGames={handleBackToGames} />;
   }
 
   return <GameSelector onGameSelect={handleGameSelect} onBackToStart={onBackToStart} />;

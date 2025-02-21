@@ -139,7 +139,7 @@ export const FeedbackMessage = ({ isCorrect, message, hint }) => (
   </motion.div>
 );
 
-export const HelpPanel = ({ content }) => (
+export const HelpPanel = ({ children }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -149,7 +149,7 @@ export const HelpPanel = ({ content }) => (
       <HelpCircle className="w-6 h-6 text-primary shrink-0 mt-1" />
       <div>
         <h3 className="font-bold text-lg mb-2">How to Play:</h3>
-        {content}
+        {children}
       </div>
     </div>
   </motion.div>

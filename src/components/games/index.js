@@ -1,5 +1,6 @@
 import React from 'react';
 import TenseTraveler from './TenseTraveler';
+import TalkToMe from './TalkToMe';
 
 const TenseTravelerWrapper = ({ onBackToGames }) => {
   const handleReset = () => {
@@ -18,4 +19,4 @@ const TenseTravelerWrapper = ({ onBackToGames }) => {
   );
 };
 
-export default TenseTravelerWrapper;
+export { TenseTravelerWrapper, TalkToMe };

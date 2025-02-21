@@ -10,14 +10,13 @@ export const getQuestionsByTopic = /* GraphQL */ `
         correct_answer
         options {
           S
+          __typename
         }
         question
         type
         pro_tip
-        __typename
       }
       nextToken
-      __typename
     }
   }
 `;

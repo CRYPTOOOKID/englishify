@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-
+import { Skeleton, SkeletonCircle } from "../components/ui/skeleton";
 import ProgressTracker from './ProgressTracker';
 
 const QuestionView = ({
@@ -34,8 +34,16 @@ const QuestionView = ({
 
   if (!question) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-text-secondary text-lg">No questions found for this topic.</p>
+      <div className="flex flex-col gap-6 min-h-[400px] p-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-5">
+            <SkeletonCircle size="12" />
+            <div className="flex-1 flex flex-col gap-2">
+              <Skeleton className="h-5" />
+              <Skeleton className="h-5 w-4/5" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

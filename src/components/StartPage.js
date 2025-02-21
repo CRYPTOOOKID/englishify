@@ -107,7 +107,7 @@ const StartPage = ({ onTopicSelect, onShowGames, onGameSelect }) => {
                   <Button
                     variant="outline"
                     className="w-full h-auto py-4 text-left justify-start"
-                    onClick={() => onGameSelect(game.toLowerCase())}
+                    onClick={() => onGameSelect(game.replace(/([A-Z])/g, ' $1').trim())}
                   >
                     <span className="capitalize">{game.replace(/([A-Z])/g, ' $1').trim()}</span>
                   </Button>

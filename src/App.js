@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// External dependencies
 import { Amplify } from 'aws-amplify';
 import { generateClient } from '@aws-amplify/api';
-import { getQuestionsByTopic } from './graphql/queries';
-import awsconfig from './aws-exports';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+
+// Internal imports
+import awsconfig from './aws-exports';
+import { getQuestionsByTopic } from './graphql/queries';
 
 // Components
 import StartPage from './components/StartPage';
@@ -75,12 +78,21 @@ export default function App() {
                 });
 
                 if (response.errors) {
-                    throw new Error(response.errors[0].message);
+                    console.error('GraphQL Errors:', response.errors);
+                    throw new Error(`GraphQL Error: ${response.errors[0].message}`);
                 }
 
                 const result = response.data.getQuestionsByTopic;
-                if (isMounted && result && result.items) {
-                    setQuestions(result.items);
+                if (!result || !result.items) {
+                    throw new Error('Invalid response format');
+                }
+
+                if (isMounted) {
+                    const formattedQuestions = result.items.map(item => ({
+                        ...item,
+                        options: Array.isArray(item.options) ? item.options : item.options?.S ? [item.options.S] : []
+                    }));
+                    setQuestions(formattedQuestions);
                 }
             } catch (err) {
                 console.error('Error fetching questions:', err);
@@ -178,9 +190,22 @@ export default function App() {
                             limit: 10
                         }
                     });
-                    if (response.data.getQuestionsByTopic.items) {
-                        setQuestions(response.data.getQuestionsByTopic.items);
+                    
+                    if (response.errors) {
+                        console.error('GraphQL Errors:', response.errors);
+                        throw new Error(`GraphQL Error: ${response.errors[0].message}`);
                     }
+
+                    const result = response.data.getQuestionsByTopic;
+                    if (!result || !result.items) {
+                        throw new Error('Invalid response format');
+                    }
+
+                    const formattedQuestions = result.items.map(item => ({
+                        ...item,
+                        options: Array.isArray(item.options) ? item.options : item.options?.S ? [item.options.S] : []
+                    }));
+                    setQuestions(formattedQuestions);
                 } catch (err) {
                     console.error('Error re-fetching questions:', err);
                 } finally {
