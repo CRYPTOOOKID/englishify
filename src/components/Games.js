@@ -7,6 +7,7 @@ import WordTileGame from './games/WordTileGame';
 import Crossroads from './games/Crossroads';
 import TenseTraveler from './games/TenseTraveler';
 import TalkToMe from './games/TalkToMe';
+import WordWeaver from './games/WordWeaver';
 
 const Games = ({ onBackToStart, initialGame }) => {
   const [selectedGame, setSelectedGame] = useState(initialGame || null);
@@ -39,6 +40,9 @@ const Games = ({ onBackToStart, initialGame }) => {
   }
   if (selectedGame === 'talkToMe') {
     return <TalkToMe onBackToGames={handleBackToGames} />;
+  }
+  if (selectedGame === 'wordWeaver') {
+    return <WordWeaver onBackToGames={handleBackToGames} />;
   }
 
   return <GameSelector onGameSelect={handleGameSelect} onBackToStart={onBackToStart} />;

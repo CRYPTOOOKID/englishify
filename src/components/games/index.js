@@ -1,6 +1,7 @@
 import React from 'react';
 import TenseTraveler from './TenseTraveler';
 import TalkToMe from './TalkToMe';
+import WordWeaver from './WordWeaver';
 
 const TenseTravelerWrapper = ({ onBackToGames }) => {
   const handleReset = () => {
@@ -19,4 +20,4 @@ const TenseTravelerWrapper = ({ onBackToGames }) => {
   );
 };
 
-export { TenseTravelerWrapper, TalkToMe };
+export { TenseTravelerWrapper, TalkToMe, WordWeaver };

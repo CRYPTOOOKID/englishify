@@ -242,6 +242,33 @@ const GameSelector = ({ onGameSelect, onBackToStart }) => {
             </span>
           </motion.button>
 
+          <motion.button
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0 }
+            }}
+            onClick={() => onGameSelect('wordWeaver')}
+            className="group relative bg-gradient-to-br from-white to-gray-50 p-8 rounded-lg
+              transition-all duration-200 ease-out min-h-[150px] flex flex-col items-center justify-center
+              border border-gray-100 hover:border-purple-400
+              before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br
+              before:from-purple-500/90 before:to-indigo-600/90
+              before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-150
+              shadow-sm hover:shadow-md"
+            whileHover={{
+              y: -2,
+              scale: 1.03,
+              transition: { duration: 0.2, ease: "easeOut" }
+            }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <span className="relative z-10 text-xl font-medium text-gray-700 group-hover:text-white
+              transition-colors duration-150 ease-out"
+            >
+              Word Weaver
+            </span>
+          </motion.button>
+
         </motion.div>
       </motion.div>
     </div>
