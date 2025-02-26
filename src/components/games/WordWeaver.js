@@ -359,6 +359,7 @@ const WordWeaver = ({ onBackToGames }) => {
           setFeedback('');
           setFilledBlanks([]);
           setCurrentBlankIndex(0);
+          setVerifiedWords([]); // Reset verified words for new question
           latestTranscriptRef.current = ''; // Reset the transcript ref
           
           // Log the transition for debugging
@@ -381,119 +382,71 @@ const WordWeaver = ({ onBackToGames }) => {
     }, [gameData]);
 const processSpokenWord = useCallback(async () => {
   try {
-    // Use the latest transcript from the ref to ensure we have the most up-to-date value
     const currentTranscript = latestTranscriptRef.current || transcribedText;
     if (!currentTranscript) return;
     
-    // Create a local copy of the current state to ensure consistency
     const localQuestionIndex = currentQuestionIndex;
     const currentQuestion = gameData[localQuestionIndex];
     const spokenSentence = currentTranscript.toLowerCase();
     
-    // Create a local copy of filled blanks
-    const localFilledBlanks = [...filledBlanks];
+    // Get feedback from AI
+    const feedbackText = await getFeedback(spokenSentence, filledBlanks);
     
-    // Get feedback from AI for the full sentence and wait for the response
-    const feedbackText = await getFeedback(spokenSentence, localFilledBlanks);
-    
-    // Check if the feedback indicates success using the helper function
     if (isSuccessFeedback(feedbackText)) {
-      console.log("Correct answer detected, processing words...");
-      
-      // Normalize the skeleton and spoken sentence for comparison
+      // Extract words from the spoken sentence
       const normalizedSkeleton = currentQuestion.skeleton.toLowerCase();
-      const normalizedSpoken = spokenSentence.toLowerCase();
-      
-      // Create a regex pattern to match the sentence structure
       const skeletonParts = normalizedSkeleton.split('___');
       const regexPattern = skeletonParts
         .map((part, index) => {
-          // Escape special regex characters in the fixed parts
           const escapedPart = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          // If this is not the last part, add capture group for the blank
-          // Use word boundaries to ensure we capture whole words
           return index < skeletonParts.length - 1
             ? `${escapedPart}\\b(\\w+)\\b`
             : escapedPart;
         })
         .join('\\s*');
       
-      // Create regex with word boundaries and case insensitive flag
       const regex = new RegExp(`^${regexPattern}$`, 'i');
-      const match = normalizedSpoken.match(regex);
+      const match = spokenSentence.match(regex);
       
-      // Debug logging for sentence matching
-      console.log('Process Word - Sentence Matching:', {
-        skeleton: normalizedSkeleton,
-        regexPattern,
-        spokenSentence: normalizedSpoken,
-        match: match ? match.slice(1) : null
-      });
-      
-      // Extract captured words if there's a match
-      let newFilledBlanks = [];
       if (match) {
-        // match[0] is the full match, subsequent elements are the captured groups
         const extractedWords = match.slice(1);
-        
-        // Debug logging for word validation
-        console.log('Process Word - Word Validation:', {
-          extractedWords,
-          wordCloud: currentQuestion.wordCloud,
-          validation: extractedWords.map(word => ({
-            word: word.toLowerCase(),
-            isValid: currentQuestion.wordCloud.includes(word.toLowerCase())
-          }))
-        });
-        
-        // Verify each word exists in the word cloud
         const allWordsValid = extractedWords.every(word =>
           currentQuestion.wordCloud.includes(word.toLowerCase())
         );
         
         if (allWordsValid) {
-          newFilledBlanks = extractedWords;
-          console.log('Process Word - Valid Words Found:', newFilledBlanks);
-        } else {
-          console.log('Process Word - Invalid Words Found');
+          // Set filled blanks first
+          setFilledBlanks(extractedWords);
+          
+          // Use a short delay to ensure DOM is updated
+          requestAnimationFrame(() => {
+            // Then verify words to trigger the animation
+            setVerifiedWords(prev => [...prev, ...extractedWords]);
+            
+            // Update score
+            setScore(prev => prev + 1);
+            
+            // Wait for animation to complete before moving to next question
+            setTimeout(() => {
+              handleNextQuestion();
+            }, 1500);
+          });
         }
-      } else {
-        console.log('Process Word - No Match Found');
-      }
-      
-      // Only update filled blanks if we have valid words
-      if (newFilledBlanks.length > 0) {
-        console.log('Process Word - Updating Filled Blanks:', newFilledBlanks);
-        setFilledBlanks(newFilledBlanks);
-      }
-      
-      // If all blanks are filled and the feedback indicates success
-      if (newFilledBlanks.length === currentQuestion.blanks && isSuccessFeedback(feedbackText)) {
-        // Add to score
-        setScore(prev => prev + 1);
-        
-        // Update filled blanks state
-        setFilledBlanks(newFilledBlanks);
-        
-        // Wait a moment before moving to next question
-        setTimeout(() => {
-          handleNextQuestion();
-        }, 2000);
       }
     }
-    } catch (error) {
-      console.error('Error processing spoken word:', error);
-      setFeedback(`Error processing your answer: ${error.message}. Please try again.`);
+  } catch (error) {
+    console.error('Error processing spoken word:', error);
+    setFeedback(`Error processing your answer: ${error.message}. Please try again.`);
+  }
+  
+  // Ensure feedback is visible
+  setTimeout(() => {
+    const feedbackElement = document.getElementById('feedback-section');
+    if (feedbackElement) {
+      feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-    
-    // Ensure feedback is visible
-    setTimeout(() => {
-      const feedbackElement = document.getElementById('feedback-section');
-      if (feedbackElement) {
-        feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }, 300);
-  }, [handleNextQuestion, getFeedback, isSuccessFeedback]);
+  }, 300);
+}, [handleNextQuestion, getFeedback, isSuccessFeedback]);
 
   // Update processSpokenWordRef whenever processSpokenWord changes
   useEffect(() => {
@@ -528,6 +481,9 @@ const processSpokenWord = useCallback(async () => {
     }
   };
 
+  // Refs for DOM elements
+  const blankRefs = useRef({});
+
   // Render the sentence with filled blanks
   const renderSentence = () => {
     const currentQuestion = gameData[currentQuestionIndex];
@@ -539,15 +495,38 @@ const processSpokenWord = useCallback(async () => {
           <React.Fragment key={index}>
             {part}
             {index < parts.length - 1 && (
-              <span className={`inline-block min-w-[80px] mx-1 px-2 py-1 rounded-md ${
-                filledBlanks[index] 
-                  ? 'bg-green-500 text-white' 
-                  : index === currentBlankIndex 
-                    ? 'bg-yellow-200 border-2 border-yellow-400 animate-pulse' 
+              <motion.div
+                ref={el => blankRefs.current[index] = el}
+                className={`inline-block min-w-[80px] mx-1 px-2 py-1 rounded-md ${
+                  filledBlanks[index] && verifiedWords.includes(filledBlanks[index])
+                    ? 'bg-green-500 text-white'
                     : 'bg-gray-200'
-              }`}>
-                {filledBlanks[index] || '___'}
-              </span>
+                }`}
+              >
+                {filledBlanks[index] && (
+                  <motion.div
+                    layoutId={`word-${filledBlanks[index]}`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 25,
+                      duration: 0.5
+                    }}
+                    className="inline-block"
+                    style={{
+                      position: 'relative',
+                      zIndex: 2
+                    }}
+                  >
+                    {filledBlanks[index]}
+                  </motion.div>
+                )}
+                {!filledBlanks[index] && (
+                  <div className="min-h-[24px]">___</div>
+                )}
+              </motion.div>
             )}
           </React.Fragment>
         ))}
@@ -556,29 +535,72 @@ const processSpokenWord = useCallback(async () => {
   };
 
   // Render word cloud
+  const [verifiedWords, setVerifiedWords] = useState([]);
+
+  // Track word positions in the cloud for animation
+  const [wordPositions, setWordPositions] = useState({});
+  const wordRefs = useRef({});
+
+  useEffect(() => {
+    // Update word positions when words are verified
+    Object.keys(wordRefs.current).forEach(word => {
+      const element = wordRefs.current[word];
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        setWordPositions(prev => ({
+          ...prev,
+          [word]: { x: rect.left, y: rect.top }
+        }));
+      }
+    });
+  }, [verifiedWords]);
+
   const renderWordCloud = () => {
     const currentQuestion = gameData[currentQuestionIndex];
     
     return (
       <div className="flex flex-wrap justify-center gap-3 mb-8">
-        {currentQuestion.wordCloud.map((word, index) => (
-          <motion.div
-            key={index}
-            className="px-4 py-2 rounded-full text-lg font-medium bg-blue-100 text-blue-700 border border-blue-200"
-            whileHover={{ scale: 1.05 }}
-            animate={{
-              scale: [1, 1.05, 1],
-              transition: { 
-                duration: 2, 
-                repeat: Infinity, 
-                repeatType: 'reverse',
-                delay: index * 0.2
-              }
-            }}
-          >
-            {word}
-          </motion.div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {currentQuestion.wordCloud.map((word, index) => {
+            const isVerified = verifiedWords.includes(word);
+            
+            if (isVerified) return null; // Remove verified words from DOM
+            
+            return (
+              <motion.div
+                key={word}
+                ref={el => wordRefs.current[word] = el}
+                layoutId={`word-${word}`}
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  transformOrigin: 'center'
+                }}
+                className="px-4 py-2 rounded-full text-lg font-medium bg-blue-100 text-blue-700 border border-blue-200"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  transition: {
+                    duration: 0.3
+                  }
+                }}
+                exit={{
+                  scale: 0.8,
+                  opacity: 0,
+                  transition: {
+                    duration: 0.3,
+                    ease: "easeInOut"
+                  }
+                }}
+                whileHover={{ scale: 1.1 }}
+                layout
+              >
+                {word}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     );
   };
