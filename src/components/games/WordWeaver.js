@@ -1,7 +1,47 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
-import { generateWordWeaverPrompt } from '../../prompts/games/wordWeaverPrompt';
+
+/**
+ * Re-optimized Word Weaver game prompt template for the AI language tutor
+ * (Handles full sentence input by extracting the words for the blanks)
+ */
+const WORD_WEAVER_PROMPT = `You are an AI English tutor for Word Weaver.
+
+IMPORTANT: Evaluate the full sentence that the user has spoken. From the spoken sentence, extract the words that are intended to fill the blanks in the sentence skeleton. Then, verify:
+1. Each extracted word exists in the word cloud
+2. The words appear in a logical order that completes the sentence meaningfully
+3. The grammar and syntax of the completed sentence is correct
+
+Respond in ONE of these formats:
+1. "Correct! [completed_sentence]" if all extracted words are in the word cloud and form a logical, grammatically correct sentence.
+2. "Oops! The word(s) '[non_matching_words]' are not in the word cloud." if any extracted words are not in the word cloud.
+3. "Oops! While those words are available, they don't create a logical sentence. Try a different combination." if the words are in the word cloud but don't form a meaningful sentence.
+4. "Oops! I heard '[spoken_sentence]' but couldn't match it to the sentence structure. Please try again." if the spoken sentence structure doesn't match the expected pattern.
+
+Current Game State:
+* Question: "[skeleton]"
+* Available Words: [wordCloud]
+* Spoken Sentence: "[spokenSentence]"
+* Progress So Far: "[currentAttempt]"
+
+Extract the words intended for the blanks from the spoken sentence, verify them against the word cloud, and check if they form a logical completion of the sentence. Provide ONE feedback line.`;
+
+/**
+ * Function to generate the prompt with specific game context
+ * @param {string} skeleton - The sentence skeleton with blanks
+ * @param {string[]} wordCloud - Array of available words
+ * @param {string} spokenSentence - The full sentence spoken by the user
+ * @param {string} currentAttempt - Current sentence with filled and remaining blanks
+ * @returns {string} - The complete prompt with game context
+ */
+function generateWordWeaverPrompt(skeleton, wordCloud, spokenSentence, currentAttempt) {
+  return WORD_WEAVER_PROMPT
+    .replace('[skeleton]', skeleton)
+    .replace('[wordCloud]', JSON.stringify(wordCloud))
+    .replace('[spokenSentence]', spokenSentence)
+    .replace('[currentAttempt]', currentAttempt);
+}
 
 const GEMINI_API_KEY = 'AIzaSyA6MdoSLwUd2D8kf1goBDg-92nvMTq2j9A';
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
@@ -75,6 +115,8 @@ const WordWeaver = ({ onBackToGames }) => {
   const recognitionRef = useRef(null);
   // Store the latest transcript in a ref to avoid race conditions
   const latestTranscriptRef = useRef('');
+  // Store the latest processSpokenWord callback in a ref
+  const processSpokenWordRef = useRef(null);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -101,7 +143,8 @@ const WordWeaver = ({ onBackToGames }) => {
         if (latestTranscriptRef.current) {
           // Use setTimeout to ensure state is updated before processing
           setTimeout(() => {
-            processSpokenWord();
+            // Call the latest version of processSpokenWord through the ref
+            processSpokenWordRef.current();
             
             // Make sure feedback is visible by scrolling to it
             const feedbackElement = document.getElementById('feedback-section');
@@ -125,38 +168,103 @@ const WordWeaver = ({ onBackToGames }) => {
     };
   }, []);
 
-  const handleNextQuestion = useCallback(() => {
-    if (currentQuestionIndex < gameData.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-      setTranscribedText('');
-      setFeedback('');
-      setFilledBlanks([]);
-      setCurrentBlankIndex(0);
-    } else {
-      setShowConfetti(true);
-      // Only set gameComplete after a short delay to show confetti
-      setTimeout(() => {
-        setGameComplete(true);
-      }, 1000);
-    }
-  }, [currentQuestionIndex, gameData.length]);
-
-  const getFeedback = useCallback(async (spokenWord, currentFilledBlanks) => {
+  const getFeedback = useCallback(async (spokenSentence, currentFilledBlanks) => {
     setIsLoading(true);
     try {
-      const currentQuestion = gameData[currentQuestionIndex];
+      // Create local copies of state to ensure consistency
+      const localQuestionIndex = currentQuestionIndex;
+      const currentQuestion = gameData[localQuestionIndex];
+      
+      // Log current game state for debugging
+      console.log('Current Game State:', {
+        questionIndex: localQuestionIndex,
+        skeleton: currentQuestion.skeleton,
+        wordCloud: currentQuestion.wordCloud,
+        spokenSentence,
+        currentFilledBlanks
+      });
+
+      // Verify we're still on the same question
+      if (localQuestionIndex !== currentQuestionIndex) {
+        console.log('Question index changed during feedback generation, aborting');
+        return 'Please try again.';
+      }
       
       // Create current sentence attempt with filled blanks and remaining blanks
       let currentSentenceAttempt = currentQuestion.skeleton;
-      let blankCount = 0;
       
-      currentSentenceAttempt = currentQuestion.skeleton.replace(/___/g, (match) => {
-        if (blankCount < currentFilledBlanks.length && currentFilledBlanks[blankCount]) {
-          return currentFilledBlanks[blankCount++];
-        }
-        blankCount++;
-        return '___';
+      // First, normalize the skeleton and spoken sentence for comparison
+      const normalizedSkeleton = currentQuestion.skeleton.toLowerCase();
+      const normalizedSpoken = spokenSentence.toLowerCase();
+      
+      // Create a regex pattern to match the sentence structure
+      const skeletonParts = normalizedSkeleton.split('___');
+      const regexPattern = skeletonParts
+        .map((part, index) => {
+          const escapedPart = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return index < skeletonParts.length - 1
+            ? `${escapedPart}\\b(\\w+)\\b`
+            : escapedPart;
+        })
+        .join('\\s*');
+      
+      // Try to match the spoken sentence against the pattern
+      const regex = new RegExp(`^${regexPattern}$`, 'i');
+      const match = normalizedSpoken.match(regex);
+      
+      // Debug logging
+      console.log('Sentence Matching:', {
+        skeleton: normalizedSkeleton,
+        regexPattern,
+        spokenSentence: normalizedSpoken,
+        match: match ? match.slice(1) : null
       });
+      
+      if (match) {
+        // Extract the words from the match
+        const extractedWords = match.slice(1);
+        
+        // Debug logging for word validation
+        console.log('Word Validation:', {
+          extractedWords,
+          wordCloud: currentQuestion.wordCloud,
+          validation: extractedWords.map(word => ({
+            word: word.toLowerCase(),
+            isValid: currentQuestion.wordCloud.includes(word.toLowerCase())
+          }))
+        });
+        
+        // Check if all extracted words are in the word cloud
+        const allWordsValid = extractedWords.every(word =>
+          currentQuestion.wordCloud.includes(word.toLowerCase())
+        );
+        
+        if (allWordsValid) {
+          // If all words are valid, use them in the current attempt
+          let blankCount = 0;
+          currentSentenceAttempt = currentQuestion.skeleton.replace(/___/g, () =>
+            extractedWords[blankCount++] || '___'
+          );
+          
+          // Debug logging for final sentence
+          console.log('Final Sentence:', {
+            original: currentQuestion.skeleton,
+            filled: currentSentenceAttempt,
+            extractedWords
+          });
+        }
+      }
+
+      // Generate the prompt with current question context
+      const prompt = generateWordWeaverPrompt(
+        currentQuestion.skeleton,
+        currentQuestion.wordCloud,
+        spokenSentence,
+        currentSentenceAttempt
+      );
+
+      // Log the prompt being sent to the API
+      console.log('Sending prompt to API:', prompt);
 
       // Try with API key as a query parameter first
       let response = await fetch(`${GEMINI_API_ENDPOINT}?key=${GEMINI_API_KEY}`, {
@@ -167,17 +275,15 @@ const WordWeaver = ({ onBackToGames }) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: generateWordWeaverPrompt(
-                currentQuestion.skeleton,
-                currentQuestion.wordCloud,
-                spokenWord,
-                currentSentenceAttempt
-              )
+              text: prompt // Use the already generated prompt
             }]
           }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 100
+            maxOutputTokens: 200,
+            topK: 1,
+            topP: 0.8,
+            stopSequences: ["\n"]
           }
         })
       });
@@ -194,17 +300,15 @@ const WordWeaver = ({ onBackToGames }) => {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: generateWordWeaverPrompt(
-                  currentQuestion.skeleton,
-                  currentQuestion.wordCloud,
-                  spokenWord,
-                  currentSentenceAttempt
-                )
+                text: prompt // Use the already generated prompt
               }]
             }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 100
+              maxOutputTokens: 200, // Match the first request
+              topK: 1,
+              topP: 0.8,
+              stopSequences: ["\n"]
             }
           })
         });
@@ -223,53 +327,163 @@ const WordWeaver = ({ onBackToGames }) => {
         throw new Error('Invalid response format from API');
       }
 
-      // Set feedback and ensure it's visible
-      setFeedback(data.candidates[0].content.parts[0].text);
-      console.log("Feedback received:", data.candidates[0].content.parts[0].text);
+      const feedbackText = data.candidates[0].content.parts[0].text.trim();
+      console.log("Feedback received:", feedbackText);
+      
+      // Set feedback state
+      setFeedback(feedbackText);
+      
+      // Return the feedback text so the caller can use it
+      return feedbackText;
     } catch (error) {
       console.error('Error getting feedback:', error);
-      setFeedback(`Error getting feedback: ${error.message}. Please try again.`);
+      const errorMessage = `Error getting feedback: ${error.message}. Please try again.`;
+      setFeedback(errorMessage);
+      return errorMessage;
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [currentQuestionIndex, gameData]);
+  }, [currentQuestionIndex]);
 
-  const processSpokenWord = useCallback(async () => {
+  // Helper function to check if feedback indicates success
+  const isSuccessFeedback = useCallback((feedbackText) => {
+    return feedbackText.startsWith("Correct!");
+  }, []);
+
+  const handleNextQuestion = useCallback(() => {
+      if (currentQuestionIndex < gameData.length - 1) {
+        setCurrentQuestionIndex(prevIndex => {
+          const nextIndex = prevIndex + 1;
+          // Reset all state for the new question
+          setTranscribedText('');
+          setFeedback('');
+          setFilledBlanks([]);
+          setCurrentBlankIndex(0);
+          latestTranscriptRef.current = ''; // Reset the transcript ref
+          
+          // Log the transition for debugging
+          console.log('Transitioning to next question:', {
+            previousIndex: prevIndex,
+            newIndex: nextIndex,
+            newQuestion: gameData[nextIndex]
+          });
+          
+          return nextIndex;
+        });
+      } else {
+        // Game completion handling
+        setShowConfetti(true);
+        // Only set gameComplete after a short delay to show confetti
+        setTimeout(() => {
+          setGameComplete(true);
+        }, 1000);
+      }
+    }, [gameData]);
+const processSpokenWord = useCallback(async () => {
+  try {
     // Use the latest transcript from the ref to ensure we have the most up-to-date value
     const currentTranscript = latestTranscriptRef.current || transcribedText;
     if (!currentTranscript) return;
     
-    const currentQuestion = gameData[currentQuestionIndex];
-    const spokenWord = currentTranscript.toLowerCase();
+    // Create a local copy of the current state to ensure consistency
+    const localQuestionIndex = currentQuestionIndex;
+    const currentQuestion = gameData[localQuestionIndex];
+    const spokenSentence = currentTranscript.toLowerCase();
     
-    // Check if the word is in the word cloud
-    const isInWordCloud = currentQuestion.wordCloud.some(
-      word => word.toLowerCase() === spokenWord
-    );
-
-    if (isInWordCloud) {
-      // Add the word to filled blanks
-      const newFilledBlanks = [...filledBlanks];
-      newFilledBlanks[currentBlankIndex] = spokenWord;
-      setFilledBlanks(newFilledBlanks);
+    // Create a local copy of filled blanks
+    const localFilledBlanks = [...filledBlanks];
+    
+    // Get feedback from AI for the full sentence and wait for the response
+    const feedbackText = await getFeedback(spokenSentence, localFilledBlanks);
+    
+    // Check if the feedback indicates success using the helper function
+    if (isSuccessFeedback(feedbackText)) {
+      console.log("Correct answer detected, processing words...");
       
-      // Get feedback from AI
-      await getFeedback(spokenWord, newFilledBlanks);
+      // Normalize the skeleton and spoken sentence for comparison
+      const normalizedSkeleton = currentQuestion.skeleton.toLowerCase();
+      const normalizedSpoken = spokenSentence.toLowerCase();
       
-      // Move to next blank if available
-      if (currentBlankIndex < currentQuestion.blanks - 1) {
-        setCurrentBlankIndex(currentBlankIndex + 1);
+      // Create a regex pattern to match the sentence structure
+      const skeletonParts = normalizedSkeleton.split('___');
+      const regexPattern = skeletonParts
+        .map((part, index) => {
+          // Escape special regex characters in the fixed parts
+          const escapedPart = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          // If this is not the last part, add capture group for the blank
+          // Use word boundaries to ensure we capture whole words
+          return index < skeletonParts.length - 1
+            ? `${escapedPart}\\b(\\w+)\\b`
+            : escapedPart;
+        })
+        .join('\\s*');
+      
+      // Create regex with word boundaries and case insensitive flag
+      const regex = new RegExp(`^${regexPattern}$`, 'i');
+      const match = normalizedSpoken.match(regex);
+      
+      // Debug logging for sentence matching
+      console.log('Process Word - Sentence Matching:', {
+        skeleton: normalizedSkeleton,
+        regexPattern,
+        spokenSentence: normalizedSpoken,
+        match: match ? match.slice(1) : null
+      });
+      
+      // Extract captured words if there's a match
+      let newFilledBlanks = [];
+      if (match) {
+        // match[0] is the full match, subsequent elements are the captured groups
+        const extractedWords = match.slice(1);
+        
+        // Debug logging for word validation
+        console.log('Process Word - Word Validation:', {
+          extractedWords,
+          wordCloud: currentQuestion.wordCloud,
+          validation: extractedWords.map(word => ({
+            word: word.toLowerCase(),
+            isValid: currentQuestion.wordCloud.includes(word.toLowerCase())
+          }))
+        });
+        
+        // Verify each word exists in the word cloud
+        const allWordsValid = extractedWords.every(word =>
+          currentQuestion.wordCloud.includes(word.toLowerCase())
+        );
+        
+        if (allWordsValid) {
+          newFilledBlanks = extractedWords;
+          console.log('Process Word - Valid Words Found:', newFilledBlanks);
+        } else {
+          console.log('Process Word - Invalid Words Found');
+        }
       } else {
-        // All blanks filled, add to score
-        setScore(score + 1);
+        console.log('Process Word - No Match Found');
+      }
+      
+      // Only update filled blanks if we have valid words
+      if (newFilledBlanks.length > 0) {
+        console.log('Process Word - Updating Filled Blanks:', newFilledBlanks);
+        setFilledBlanks(newFilledBlanks);
+      }
+      
+      // If all blanks are filled and the feedback indicates success
+      if (newFilledBlanks.length === currentQuestion.blanks && isSuccessFeedback(feedbackText)) {
+        // Add to score
+        setScore(prev => prev + 1);
+        
+        // Update filled blanks state
+        setFilledBlanks(newFilledBlanks);
         
         // Wait a moment before moving to next question
         setTimeout(() => {
           handleNextQuestion();
         }, 2000);
       }
-    } else {
-      // Word not in cloud, get feedback
-      await getFeedback(spokenWord, filledBlanks);
+    }
+    } catch (error) {
+      console.error('Error processing spoken word:', error);
+      setFeedback(`Error processing your answer: ${error.message}. Please try again.`);
     }
     
     // Ensure feedback is visible
@@ -279,7 +493,12 @@ const WordWeaver = ({ onBackToGames }) => {
         feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }, 300);
-  }, [transcribedText, currentQuestionIndex, currentBlankIndex, filledBlanks, score, handleNextQuestion, getFeedback]);
+  }, [handleNextQuestion, getFeedback, isSuccessFeedback]);
+
+  // Update processSpokenWordRef whenever processSpokenWord changes
+  useEffect(() => {
+    processSpokenWordRef.current = processSpokenWord;
+  }, [processSpokenWord]);
 
   const startListening = () => {
     setTranscribedText('');
@@ -296,7 +515,8 @@ const WordWeaver = ({ onBackToGames }) => {
       // Process the spoken word only when the user explicitly stops listening
       // Use the latest transcript from the ref to ensure we have the most up-to-date value
       if (latestTranscriptRef.current || transcribedText) {
-        processSpokenWord();
+        // Use the ref to ensure we have the latest version of processSpokenWord
+        processSpokenWordRef.current();
         // Make sure feedback is visible by scrolling to it
         setTimeout(() => {
           const feedbackElement = document.getElementById('feedback-section');
