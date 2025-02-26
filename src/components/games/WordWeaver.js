@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import Confetti from 'react-confetti';
 
 /**
@@ -415,22 +415,16 @@ const processSpokenWord = useCallback(async () => {
         );
         
         if (allWordsValid) {
-          // Set filled blanks first
+          console.log('Correct answer detected');
+          
+          // Update filledBlanks
           setFilledBlanks(extractedWords);
           
-          // Use a short delay to ensure DOM is updated
-          requestAnimationFrame(() => {
-            // Then verify words to trigger the animation
-            setVerifiedWords(prev => [...prev, ...extractedWords]);
-            
-            // Update score
-            setScore(prev => prev + 1);
-            
-            // Wait for animation to complete before moving to next question
-            setTimeout(() => {
-              handleNextQuestion();
-            }, 1500);
-          });
+          // Update score
+          setScore(prev => prev + 1);
+          
+          // Move to next question immediately without waiting for animation
+          handleNextQuestion();
         }
       }
     }
@@ -446,7 +440,7 @@ const processSpokenWord = useCallback(async () => {
       feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, 300);
-}, [handleNextQuestion, getFeedback, isSuccessFeedback]);
+}, [handleNextQuestion, getFeedback, isSuccessFeedback, filledBlanks]);
 
   // Update processSpokenWordRef whenever processSpokenWord changes
   useEffect(() => {
@@ -496,35 +490,30 @@ const processSpokenWord = useCallback(async () => {
             {part}
             {index < parts.length - 1 && (
               <motion.div
+                data-blank-index={index}
                 ref={el => blankRefs.current[index] = el}
-                className={`inline-block min-w-[80px] mx-1 px-2 py-1 rounded-md ${
-                  filledBlanks[index] && verifiedWords.includes(filledBlanks[index])
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200'
-                }`}
+                className={`inline-block min-w-[80px] mx-1 px-2 py-1 rounded-md bg-gray-200`}
               >
-                {filledBlanks[index] && (
+                {filledBlanks[index] ? (
                   <motion.div
-                    layoutId={`word-${filledBlanks[index]}`}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 25,
-                      duration: 0.5
-                    }}
-                    className="inline-block"
-                    style={{
-                      position: 'relative',
-                      zIndex: 2
+                    layoutId={filledBlanks[index]} // Shared layoutId with the word cloud word
+                    className="min-h-[24px] flex items-center justify-center bg-green-500 text-white rounded-md"
+                    initial={{ scale: 0.8 }}
+                    animate={{
+                      scale: [0.8, 1.1, 1],
+                      transition: {
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                        duration: 0.8,
+                        delay: 0.1
+                      }
                     }}
                   >
                     {filledBlanks[index]}
                   </motion.div>
-                )}
-                {!filledBlanks[index] && (
-                  <div className="min-h-[24px]">___</div>
+                ) : (
+                  <div className="min-h-[24px] flex items-center justify-center">___</div>
                 )}
               </motion.div>
             )}
@@ -537,70 +526,43 @@ const processSpokenWord = useCallback(async () => {
   // Render word cloud
   const [verifiedWords, setVerifiedWords] = useState([]);
 
-  // Track word positions in the cloud for animation
-  const [wordPositions, setWordPositions] = useState({});
-  const wordRefs = useRef({});
+  // No animation state or component needed - using Framer Motion's shared layout animations
 
-  useEffect(() => {
-    // Update word positions when words are verified
-    Object.keys(wordRefs.current).forEach(word => {
-      const element = wordRefs.current[word];
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        setWordPositions(prev => ({
-          ...prev,
-          [word]: { x: rect.left, y: rect.top }
-        }));
-      }
-    });
-  }, [verifiedWords]);
-
+  // Word cloud rendering with layoutId for animation
   const renderWordCloud = () => {
     const currentQuestion = gameData[currentQuestionIndex];
     
     return (
       <div className="flex flex-wrap justify-center gap-3 mb-8">
-        <AnimatePresence mode="popLayout">
-          {currentQuestion.wordCloud.map((word, index) => {
-            const isVerified = verifiedWords.includes(word);
-            
-            if (isVerified) return null; // Remove verified words from DOM
-            
-            return (
-              <motion.div
-                key={word}
-                ref={el => wordRefs.current[word] = el}
-                layoutId={`word-${word}`}
-                style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  transformOrigin: 'center'
-                }}
-                className="px-4 py-2 rounded-full text-lg font-medium bg-blue-100 text-blue-700 border border-blue-200"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  transition: {
-                    duration: 0.3
-                  }
-                }}
-                exit={{
-                  scale: 0.8,
-                  opacity: 0,
-                  transition: {
-                    duration: 0.3,
-                    ease: "easeInOut"
-                  }
-                }}
-                whileHover={{ scale: 1.1 }}
-                layout
-              >
-                {word}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+        {currentQuestion.wordCloud.map((word) => {
+          // Only show words that aren't in the filled blanks
+          const isUsed = filledBlanks.includes(word);
+          
+          if (isUsed) return null; // Don't render words that are used in blanks
+          
+          return (
+            <motion.div
+              key={word}
+              layoutId={word} // Unique layoutId for each word
+              className="px-4 py-2 rounded-full text-lg font-medium bg-blue-100 text-blue-700 border border-blue-200"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                transition: { duration: 0.3 }
+              }}
+              exit={{
+                scale: 1.2,
+                y: -20,
+                opacity: 0,
+                transition: { duration: 0.5 }
+              }}
+              whileHover={{ scale: 1.1 }}
+            >
+              {word}
+            </motion.div>
+          );
+        })}
       </div>
     );
   };
@@ -655,6 +617,7 @@ const processSpokenWord = useCallback(async () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 to-white text-foreground transition-colors duration-500">
+      
       <div className="container mx-auto p-8 relative z-10">
         <div className="flex justify-between items-center mb-8">
           <motion.button
@@ -696,16 +659,18 @@ const processSpokenWord = useCallback(async () => {
             </h2>
 
             <div className="space-y-6">
-              <div className="rounded-xl p-6 transition-all duration-300 bg-blue-50/50 border border-blue-200 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-4 text-slate-800">Complete the Sentence:</h3>
-                
-                {renderSentence()}
-                
-                <div className="mt-4">
-                  <h4 className="text-lg font-semibold mb-2 text-slate-800">Word Cloud:</h4>
-                  {renderWordCloud()}
+              <LayoutGroup>
+                <div className="rounded-xl p-6 transition-all duration-300 bg-blue-50/50 border border-blue-200 backdrop-blur-sm">
+                  <h3 className="text-xl font-semibold mb-4 text-slate-800">Complete the Sentence:</h3>
+                  
+                  {renderSentence()}
+                  
+                  <div className="mt-4">
+                    <h4 className="text-lg font-semibold mb-2 text-slate-800">Word Cloud:</h4>
+                    {renderWordCloud()}
+                  </div>
                 </div>
-              </div>
+              </LayoutGroup>
 
               <div className="flex flex-wrap gap-4 justify-center">
                 <motion.button
@@ -796,17 +761,31 @@ const processSpokenWord = useCallback(async () => {
                       opacity: 1,
                       y: 0,
                       scale: 1,
-                      boxShadow: ["0px 0px 0px rgba(59, 130, 246, 0)", "0px 0px 20px rgba(59, 130, 246, 0.5)", "0px 0px 0px rgba(59, 130, 246, 0)"]
+                      boxShadow: isSuccessFeedback(feedback)
+                        ? ["0px 0px 0px rgba(16, 185, 129, 0)", "0px 0px 20px rgba(16, 185, 129, 0.7)", "0px 0px 0px rgba(16, 185, 129, 0)"]
+                        : ["0px 0px 0px rgba(59, 130, 246, 0)", "0px 0px 20px rgba(59, 130, 246, 0.5)", "0px 0px 0px rgba(59, 130, 246, 0)"]
                     }}
                     transition={{
-                      boxShadow: { repeat: 0, duration: 1.5 }
+                      boxShadow: { repeat: isSuccessFeedback(feedback) ? 2 : 0, duration: 1.2 }
                     }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="rounded-xl p-6 transition-all duration-300 bg-blue-50 border-2 border-blue-300 backdrop-blur-sm shadow-md"
+                    className={`rounded-xl p-6 transition-all duration-300 backdrop-blur-sm shadow-md ${
+                      isSuccessFeedback(feedback)
+                        ? 'bg-green-50 border-2 border-green-300'
+                        : 'bg-blue-50 border-2 border-blue-300'
+                    }`}
                   >
                     <div className="flex items-center mb-2">
-                      <h4 className="text-lg font-semibold text-blue-800">Feedback:</h4>
-                      <div className="ml-2 px-2 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full">New</div>
+                      <h4 className={`text-lg font-semibold ${isSuccessFeedback(feedback) ? 'text-green-800' : 'text-blue-800'}`}>
+                        Feedback:
+                      </h4>
+                      <div className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        isSuccessFeedback(feedback)
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        {isSuccessFeedback(feedback) ? 'Correct!' : 'New'}
+                      </div>
                     </div>
                     <p className="text-slate-700 text-lg">{feedback}</p>
                   </motion.div>

@@ -1,9 +1,12 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card';
+import { Button } from './ui/button';
 
-// Icons (using emoji as placeholders - you can replace with actual icon components)
+// Modern icons using emoji (you can replace with SVG icons for production)
 const Icons = {
+  logo: "✏️",
   games: "🎮",
   topics: "📚",
   wordDrop: "🔤",
@@ -11,307 +14,527 @@ const Icons = {
   dragzilla: "🐉",
   idiomMatcher: "🔍",
   achievement: "🏆",
-  streak: "🔥"
+  streak: "🔥",
+  menu: "☰",
+  play: "▶️",
+  learn: "📖",
+  practice: "🔄",
+  github: "🌐",
+  twitter: "🐦",
+  discord: "💬"
 };
 
+// Game descriptions with minimal text
 const gameDescriptions = {
-  wordDrop: "Challenge yourself with our Word Drop game! Match falling words with their correct grammatical categories before they hit the bottom.",
-  markTheWords: "Improve your grammar by identifying specific word types in sentences. Perfect for learning parts of speech!",
-  dragzilla: "A fun drag-and-drop game where you arrange words to form grammatically correct sentences.",
-  idiomMatcher: "Master English idioms by matching them with their correct meanings. Expand your vocabulary with common expressions!"
+  wordDrop: "Match falling words with their grammatical categories.",
+  markTheWords: "Identify specific word types in sentences.",
+  dragzilla: "Arrange words to form grammatically correct sentences.",
+  idiomMatcher: "Match idioms with their correct meanings."
 };
 
 const StartPage = ({ onTopicSelect, onShowGames, onGameSelect }) => {
+  // Refs for scroll animations
+  const heroRef = useRef(null);
+  const featuresRef = useRef(null);
+  const gamesRef = useRef(null);
+  const footerRef = useRef(null);
+  
+  // InView hooks for scroll-triggered animations
+  const heroInView = useInView(heroRef, { once: false, amount: 0.3 });
+  const featuresInView = useInView(featuresRef, { once: false, amount: 0.3 });
+  const gamesInView = useInView(gamesRef, { once: false, amount: 0.3 });
+  const footerInView = useInView(footerRef, { once: false, amount: 0.3 });
+  
+  // Scroll progress for parallax effects
+  const { scrollYProgress } = useScroll();
+  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  
+  // Animation variants
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
     }
   };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
-  const shimmer = {
-    hidden: { backgroundPosition: '200% 0' },
-    show: { 
-      backgroundPosition: '-200% 0',
+    show: {
+      opacity: 1,
+      y: 0,
       transition: {
-        repeat: Infinity,
-        duration: 3,
-        ease: "linear"
+        type: "spring",
+        stiffness: 100,
+        damping: 10
       }
     }
   };
 
+  // Smooth scroll function
+  const scrollTo = (ref) => {
+    ref.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Feature cards data
+  const features = [
+    {
+      icon: Icons.games,
+      title: "Interactive Games",
+      description: "Practice your skills with our collection of interactive language games designed to make learning enjoyable.",
+      action: "Explore Games",
+      onClick: onShowGames,
+      color: "bg-teal-50 border-teal-200",
+      iconColor: "text-teal-600",
+      hoverColor: "group-hover:bg-teal-600",
+      textColor: "text-teal-800"
+    },
+    {
+      icon: Icons.topics,
+      title: "Topic Library",
+      description: "Explore our comprehensive collection of grammar topics and structured lessons.",
+      action: "Browse Topics",
+      onClick: () => onTopicSelect('browseTopics'),
+      color: "bg-amber-50 border-amber-200",
+      iconColor: "text-amber-600",
+      hoverColor: "group-hover:bg-amber-600",
+      textColor: "text-amber-800"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-time-pattern opacity-5 pointer-events-none"></div>
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-time-pattern opacity-3 pointer-events-none"></div>
       
-      {/* Floating Elements */}
-      <motion.div 
-        className="absolute top-20 right-20 text-4xl opacity-10 pointer-events-none text-indigo-500"
-        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      >
-        {Icons.games}
-      </motion.div>
-      <motion.div 
-        className="absolute bottom-40 left-20 text-4xl opacity-10 pointer-events-none text-purple-500"
-        animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      >
-        {Icons.topics}
-      </motion.div>
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-b from-teal-50 to-transparent opacity-40 rounded-bl-full"></div>
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-gradient-to-t from-amber-50 to-transparent opacity-40 rounded-tr-full"></div>
       
-      <div className="container px-4 py-16 mx-auto relative z-10">
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
-        >
-          <motion.h1 
-            className="text-6xl md:text-7xl font-heading font-bold mb-6"
-            variants={shimmer}
-            initial="hidden"
-            animate="show"
-            style={{
-              backgroundSize: '200% 100%',
-              backgroundImage: 'linear-gradient(to right, #4F46E5, #7C3AED, #4F46E5)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent'
-            }}
-          >
-            Master English Grammar
-          </motion.h1>
-          
-          <motion.p 
-            className="text-xl font-medium text-indigo-900/80 max-w-2xl mx-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Choose your learning path and embark on an interactive journey to improve your English skills
-          </motion.p>
-          
-          {/* Quick Stats */}
-          <motion.div 
-            className="flex flex-wrap justify-center gap-4 mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <div className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 border border-indigo-200 shadow-sm">
-              <span className="text-indigo-600">{Icons.achievement}</span>
-              <span className="text-sm font-semibold text-indigo-800">8 Achievements</span>
-            </div>
-            <div className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 border border-purple-200 shadow-sm">
-              <span className="text-purple-600">{Icons.streak}</span>
-              <span className="text-sm font-semibold text-purple-800">Continue your streak</span>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Main Options */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16"
-        >
-          {/* Games Card */}
-          <motion.div variants={item}>
+      {/* Header with navigation */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
             <motion.div
-              className="h-full relative bg-white/80 backdrop-blur-sm shadow-md hover:shadow-xl cursor-pointer group overflow-hidden rounded-xl
-                border border-indigo-100 hover:border-indigo-400
-                before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br
-                before:from-indigo-500/90 before:to-indigo-600/90
-                before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300
-                transition-all duration-300"
-              whileHover={{
-                y: -5,
-                transition: { duration: 0.2, ease: "easeOut" }
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onShowGames}
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="relative z-10 p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-3xl group-hover:scale-110 transition-transform duration-300 text-indigo-500 group-hover:text-white">{Icons.games}</span>
-                  <h3 className="text-2xl font-semibold text-indigo-800 group-hover:text-white transition-colors duration-300">
-                    Interactive Games
-                  </h3>
-                </div>
-                <p className="text-sm text-indigo-600/70 font-medium group-hover:text-white/90 transition-colors duration-300 mb-4">
-                  Learn through fun and engaging activities
-                </p>
-                <p className="text-indigo-700/80 font-medium group-hover:text-white/80 transition-colors duration-300 mb-6">
-                  Practice your skills with our collection of interactive language games designed to make learning enjoyable.
-                </p>
-                <div className="flex justify-end">
-                  <div className="flex items-center font-medium text-indigo-600 group-hover:text-white transition-colors duration-300">
-                    Explore Games <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                  </div>
-                </div>
-              </div>
+              <span className="text-2xl text-slate-700 font-bold">{Icons.logo}</span>
+              <span className="font-heading font-semibold text-xl text-slate-800">GrammarPlay</span>
             </motion.div>
-          </motion.div>
-
-          {/* Topics Card */}
-          <motion.div variants={item}>
-            <motion.div
-              className="h-full relative bg-white/80 backdrop-blur-sm shadow-md hover:shadow-xl cursor-pointer group overflow-hidden rounded-xl
-                border border-purple-100 hover:border-purple-400
-                before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br
-                before:from-purple-500/90 before:to-purple-600/90
-                before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300
-                transition-all duration-300"
-              whileHover={{
-                y: -5,
-                transition: { duration: 0.2, ease: "easeOut" }
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onTopicSelect('browseTopics')}
+            
+            {/* Navigation */}
+            <motion.nav
+              className="hidden md:flex items-center gap-6"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <div className="relative z-10 p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-3xl group-hover:scale-110 transition-transform duration-300 text-purple-500 group-hover:text-white">{Icons.topics}</span>
-                  <h3 className="text-2xl font-semibold text-purple-800 group-hover:text-white transition-colors duration-300">
-                    Topic Library
-                  </h3>
-                </div>
-                <p className="text-sm text-purple-600/70 font-medium group-hover:text-white/90 transition-colors duration-300 mb-4">
-                  Structured learning paths
-                </p>
-                <p className="text-purple-700/80 font-medium group-hover:text-white/80 transition-colors duration-300 mb-6">
-                  Explore our comprehensive collection of grammar topics and structured lessons.
-                </p>
-                <div className="flex justify-end">
-                  <div className="flex items-center font-medium text-purple-600 group-hover:text-white transition-colors duration-300">
-                    Browse Topics <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-
-        {/* Game Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="max-w-4xl mx-auto"
-        >
-          <div className="flex items-center justify-center mb-8">
-            <div className="h-px bg-gradient-to-r from-transparent via-indigo-300 to-transparent flex-grow max-w-[100px]"></div>
-            <h2 className="text-2xl font-heading font-semibold text-center px-4 text-indigo-800">Popular Games</h2>
-            <div className="h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent flex-grow max-w-[100px]"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(gameDescriptions).map(([game, description], index) => (
-              <motion.div 
-                key={game}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + (index * 0.1) }}
+              <Button
+                variant="ghost"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                onClick={() => scrollTo(heroRef)}
               >
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <motion.button
-                      className="group relative bg-gradient-to-br from-white to-gray-50 w-full p-4 rounded-lg
-                        transition-all duration-200 ease-out flex items-center gap-3
-                        border border-indigo-100 hover:border-indigo-400
-                        before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br
-                        before:from-indigo-500/90 before:to-indigo-600/90
-                        before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-150
-                        shadow-sm hover:shadow-md"
-                      whileHover={{
-                        y: -2,
-                        scale: 1.03,
-                        transition: { duration: 0.2, ease: "easeOut" }
-                      }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => onGameSelect(game.replace(/([A-Z])/g, ' $1').trim())}
-                    >
-                      <span className="relative z-10 text-xl opacity-70 group-hover:opacity-100 transition-opacity text-indigo-500 group-hover:text-white">
-                        {Icons[game] || "🎲"}
-                      </span>
-                      <span className="relative z-10 capitalize font-medium text-indigo-700 group-hover:text-white
-                        transition-colors duration-150 ease-out">
-                        {game.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                    </motion.button>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-80 p-4 border-indigo-100 bg-white/90 backdrop-blur-sm shadow-lg">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl text-indigo-500">{Icons[game] || "🎲"}</span>
-                        <h4 className="font-semibold capitalize text-indigo-800">{game.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                      </div>
-                      <p className="text-sm text-indigo-700/80 font-medium">{description}</p>
-                      <div className="mt-2 pt-2 border-t border-indigo-100 flex justify-between items-center">
-                        <span className="text-xs text-indigo-600 font-medium">Difficulty: Beginner</span>
-                        <span className="text-xs text-indigo-600 font-medium">~5 min</span>
-                      </div>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
-              </motion.div>
-            ))}
-          </div>
-          
-          {/* "View All Games" button */}
-          <motion.div 
-            className="mt-6 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <motion.button 
-              className="group relative bg-gradient-to-br from-white to-gray-50 px-4 py-2 rounded-lg
-                transition-all duration-200 ease-out flex items-center justify-center mx-auto
-                border border-indigo-100 hover:border-indigo-400
-                before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-br
-                before:from-indigo-500/90 before:to-indigo-600/90
-                before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-150
-                shadow-sm hover:shadow-md"
-              whileHover={{
-                y: -2,
-                scale: 1.03,
-                transition: { duration: 0.2, ease: "easeOut" }
-              }}
-              whileTap={{ scale: 0.97 }}
-              onClick={onShowGames}
+                Home
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                onClick={() => scrollTo(featuresRef)}
+              >
+                Features
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                onClick={() => scrollTo(gamesRef)}
+              >
+                Games
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                onClick={() => onTopicSelect('browseTopics')}
+              >
+                Topics
+              </Button>
+            </motion.nav>
+            
+            {/* CTA Button */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <span className="relative z-10 font-medium text-indigo-700 group-hover:text-white
-                transition-colors duration-150 ease-out">
-                View All Games <span className="ml-1">→</span>
-              </span>
+              <Button
+                className="bg-slate-800 text-white hover:bg-slate-700 hover:shadow-md transition-all"
+                onClick={onShowGames}
+              >
+                Start Learning
+              </Button>
+            </motion.div>
+            
+            {/* Mobile menu button */}
+            <motion.button
+              className="md:hidden text-slate-700 text-xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {Icons.menu}
             </motion.button>
+          </div>
+        </div>
+      </header>
+      
+      <main>
+        {/* Hero Section */}
+        <section ref={heroRef} className="relative py-20 md:py-32 overflow-hidden">
+          <motion.div
+            className="container px-4 mx-auto text-center relative z-10"
+            initial={{ opacity: 0 }}
+            animate={heroInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <motion.div
+              style={{ y: parallaxY }}
+              className="max-w-3xl mx-auto"
+            >
+              <motion.div
+                className="inline-block mb-4 px-4 py-1 rounded-full bg-teal-50 border border-teal-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ delay: 0.2 }}
+              >
+                <span className="text-sm font-medium text-teal-700">Interactive English Learning</span>
+              </motion.div>
+              
+              <motion.h1
+                className="text-5xl md:text-7xl font-heading font-bold mb-6 text-slate-800"
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ delay: 0.3 }}
+              >
+                Master English Grammar Through Play
+              </motion.h1>
+              
+              <motion.p
+                className="text-lg md:text-xl font-medium text-slate-600 max-w-2xl mx-auto mb-10"
+                initial={{ opacity: 0 }}
+                animate={heroInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                Engaging games and exercises designed to make learning English grammar intuitive and enjoyable
+              </motion.p>
+              
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Button
+                  className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all w-full sm:w-auto"
+                  onClick={onShowGames}
+                >
+                  <span className="mr-2">{Icons.play}</span> Play Games
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-slate-300 text-slate-700 px-8 py-6 rounded-lg text-lg hover:bg-slate-50 transition-all w-full sm:w-auto"
+                  onClick={() => onTopicSelect('browseTopics')}
+                >
+                  <span className="mr-2">{Icons.learn}</span> Browse Topics
+                </Button>
+              </motion.div>
+            </motion.div>
+            
+            {/* Stats cards */}
+            <motion.div
+              className="flex flex-wrap justify-center gap-4 mt-16"
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+              transition={{ delay: 0.8 }}
+            >
+              <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="text-teal-600">{Icons.achievement}</span>
+                  <span className="text-sm font-medium text-slate-800">8 Achievement Badges</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="text-amber-600">{Icons.streak}</span>
+                  <span className="text-sm font-medium text-slate-800">Continue your 3-day streak</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="text-indigo-600">{Icons.games}</span>
+                  <span className="text-sm font-medium text-slate-800">8 Interactive Games</span>
+                </CardContent>
+              </Card>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </section>
         
-        {/* Footer Section */}
-        <motion.div 
-          className="mt-20 pt-8 border-t border-indigo-100 text-center text-sm text-indigo-700/70 font-medium"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
-          <p>Continue your learning journey with our comprehensive English grammar resources.</p>
-          <p className="mt-2">Track your progress, earn achievements, and master English at your own pace.</p>
-        </motion.div>
-      </div>
+        {/* Features Section */}
+        <section ref={featuresRef} className="py-20 relative bg-slate-50">
+          <motion.div
+            className="container px-4 mx-auto"
+            style={{ y: useTransform(scrollYProgress, [0.2, 0.4], [50, 0]) }}
+          >
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0 }}
+              animate={featuresInView ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 text-slate-800">How We Make Learning Fun</h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">Our approach combines interactive games with structured learning paths</p>
+            </motion.div>
+            
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate={featuresInView ? "show" : "hidden"}
+              className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+            >
+              {features.map((feature, index) => (
+                <motion.div key={index} variants={item}>
+                  <Card className={`h-full group overflow-hidden hover:shadow-lg transition-all duration-300 border ${feature.color}`}>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${feature.iconColor} bg-white border ${feature.color.replace('bg-', 'border-')} group-hover:scale-110 transition-transform duration-300`}>
+                          <span className="text-2xl">{feature.icon}</span>
+                        </div>
+                        <CardTitle className={`text-2xl ${feature.textColor}`}>
+                          {feature.title}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-slate-600 text-base mb-4">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex justify-end">
+                      <Button
+                        variant="ghost"
+                        className={`${feature.iconColor} hover:bg-transparent p-0 flex items-center gap-2 group`}
+                        onClick={feature.onClick}
+                      >
+                        <span>{feature.action}</span>
+                        <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+        
+        {/* Games Showcase */}
+        <section ref={gamesRef} className="py-20 relative">
+          <motion.div
+            className="container px-4 mx-auto"
+            style={{ y: useTransform(scrollYProgress, [0.4, 0.7], [50, 0]) }}
+          >
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0 }}
+              animate={gamesInView ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 text-slate-800">Popular Games</h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">Jump right in and start improving your English skills</p>
+            </motion.div>
+            
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto"
+              variants={container}
+              initial="hidden"
+              animate={gamesInView ? "show" : "hidden"}
+            >
+              {Object.entries(gameDescriptions).map(([game, description], index) => (
+                <motion.div
+                  key={game}
+                  variants={item}
+                  whileHover={{ y: -5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <Card className={`h-full cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300 border-slate-200 ${index % 2 === 0 ? 'bg-teal-50/50' : 'bg-amber-50/50'}`}>
+                        <CardContent className="p-6 flex flex-col items-center text-center">
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${index % 2 === 0 ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'}`}>
+                            <span className="text-3xl">
+                              {Icons[game] || "🎲"}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold capitalize mb-2 text-slate-800">
+                            {game.replace(/([A-Z])/g, ' $1').trim()}
+                          </h3>
+                          <p className="text-sm text-slate-600 mb-4">
+                            {description.substring(0, 40)}...
+                          </p>
+                          <Button
+                            variant="outline"
+                            className={`mt-auto ${index % 2 === 0 ? 'border-teal-200 text-teal-700 hover:bg-teal-100/50' : 'border-amber-200 text-amber-700 hover:bg-amber-100/50'}`}
+                            onClick={() => onGameSelect(game.replace(/([A-Z])/g, ' $1').trim())}
+                          >
+                            Play Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80 p-4 border-slate-200 bg-white shadow-lg">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xl ${index % 2 === 0 ? 'text-teal-600' : 'text-amber-600'}`}>
+                            {Icons[game] || "🎲"}
+                          </span>
+                          <h4 className="font-semibold capitalize text-slate-800">
+                            {game.replace(/([A-Z])/g, ' $1').trim()}
+                          </h4>
+                        </div>
+                        <p className="text-sm text-slate-600">{description}</p>
+                        <div className="mt-2 pt-2 border-t border-slate-200 flex justify-between items-center">
+                          <span className="text-xs text-slate-500">Difficulty: Beginner</span>
+                          <span className="text-xs text-slate-500">~5 min</span>
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                </motion.div>
+              ))}
+            </motion.div>
+            
+            {/* "View All Games" button */}
+            <motion.div
+              className="mt-10 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={gamesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button
+                className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+                onClick={onShowGames}
+              >
+                View All Games <span className="ml-1">→</span>
+              </Button>
+            </motion.div>
+          </motion.div>
+        </section>
+      </main>
+      
+      {/* Footer */}
+      <footer ref={footerRef} className="bg-slate-50 border-t border-slate-200">
+        <div className="container mx-auto px-4 py-12">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-4 gap-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={footerInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Brand */}
+            <div className="col-span-1 md:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-2xl text-slate-700">{Icons.logo}</span>
+                <span className="font-heading font-semibold text-xl text-slate-800">GrammarPlay</span>
+              </div>
+              <p className="text-sm text-slate-600 mb-4">
+                Making English grammar learning intuitive and enjoyable through interactive games and exercises.
+              </p>
+              <div className="flex gap-4">
+                <Button variant="ghost" size="icon" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                  {Icons.github}
+                </Button>
+                <Button variant="ghost" size="icon" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                  {Icons.twitter}
+                </Button>
+                <Button variant="ghost" size="icon" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                  {Icons.discord}
+                </Button>
+              </div>
+            </div>
+            
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-semibold text-slate-800 mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900" onClick={onShowGames}>
+                    Games
+                  </Button>
+                </li>
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900" onClick={() => onTopicSelect('browseTopics')}>
+                    Topics
+                  </Button>
+                </li>
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900">
+                    Resources
+                  </Button>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Resources */}
+            <div>
+              <h4 className="font-semibold text-slate-800 mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900">
+                    Grammar Guide
+                  </Button>
+                </li>
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900">
+                    Vocabulary Lists
+                  </Button>
+                </li>
+                <li>
+                  <Button variant="link" className="p-0 h-auto text-slate-600 hover:text-slate-900">
+                    Practice Exercises
+                  </Button>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Newsletter */}
+            <div>
+              <h4 className="font-semibold text-slate-800 mb-4">Stay Updated</h4>
+              <p className="text-sm text-slate-600 mb-4">
+                Subscribe to our newsletter for the latest updates and new games.
+              </p>
+              <div className="flex">
+                <Button className="bg-slate-800 text-white hover:bg-slate-700">
+                  Subscribe
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            className="mt-12 pt-6 border-t border-slate-200 text-center text-sm text-slate-600"
+            initial={{ opacity: 0 }}
+            animate={footerInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <p>© 2025 GrammarPlay. All rights reserved.</p>
+            <p className="mt-2">Continue your learning journey with our comprehensive English grammar resources.</p>
+          </motion.div>
+        </div>
+      </footer>
     </div>
   );
 };
