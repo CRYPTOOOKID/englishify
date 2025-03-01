@@ -80,6 +80,26 @@ const StartPage = ({ onTopicSelect, onShowGames, onGameSelect }) => {
   };
 
   // Feature cards data
+  const Icons = {
+    logo: "✏️",
+    games: "🎮",
+    topics: "📚",
+    wordDrop: "🔤",
+    markTheWords: "✏️",
+    dragzilla: "🐉",
+    idiomMatcher: "🔍",
+    achievement: "🏆",
+    streak: "🔥",
+    menu: "☰",
+    play: "▶️",
+    learn: "📖",
+    practice: "🔄",
+    github: "🌐",
+    twitter: "🐦",
+    discord: "💬",
+    ielts: "📝"
+  };
+
   const features = [
     {
       icon: Icons.games,
@@ -102,6 +122,17 @@ const StartPage = ({ onTopicSelect, onShowGames, onGameSelect }) => {
       iconColor: "text-amber-600",
       hoverColor: "group-hover:bg-amber-600",
       textColor: "text-amber-800"
+    },
+    {
+      icon: Icons.ielts,
+      title: "IELTS Practice",
+      description: "Prepare for IELTS with comprehensive practice in reading, writing, listening, and speaking.",
+      action: "Start IELTS",
+      onClick: () => onTopicSelect('ielts'),
+      color: "bg-indigo-50 border-indigo-200",
+      iconColor: "text-indigo-600",
+      hoverColor: "group-hover:bg-indigo-600",
+      textColor: "text-indigo-800"
     }
   ];
 

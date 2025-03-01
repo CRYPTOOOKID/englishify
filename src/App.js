@@ -13,6 +13,8 @@ import StartPage from './components/StartPage';
 import Games from './components/Games';
 import QuestionView from './components/QuestionView';
 import ResultScreen from './components/ResultScreen';
+import IeltsPage from './components/ielts/IeltsPage';
+import WritingPage from './components/ielts/writingPage';
 
 // Configure Amplify
 Amplify.configure(awsconfig);
@@ -48,7 +50,7 @@ const item = {
 
 export default function App() {
     // State management
-    const [view, setView] = useState('start'); // 'start', 'games', 'topics', 'questions'
+    const [view, setView] = useState('start'); // 'start', 'games', 'topics', 'questions', 'ielts'
     const [currentTopic, setCurrentTopic] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -128,6 +130,9 @@ export default function App() {
     const handleTopicSelect = (topic) => {
         if (topic === 'browseTopics') {
             setView('topics');
+            setCurrentTopic(null);
+        } else if (topic === 'ielts') {
+            setView('ielts');
             setCurrentTopic(null);
         } else {
             resetQuizState();
@@ -231,6 +236,15 @@ export default function App() {
             case 'games':
                 return <Games onBackToStart={handleBackToStart} initialGame={currentTopic} />;
 
+            case 'ielts':
+                return (
+                    <IeltsPage
+                        onSectionSelect={(section) => {
+                            handleTopicSelect(`ielts-${section}`);
+                        }}
+                    />
+                );
+
             case 'topics':
                 if (loading) {
                     return (
@@ -319,6 +333,11 @@ export default function App() {
                 );
 
             case 'questions':
+                // Handle IELTS writing section
+                if (currentTopic === 'ielts-writing') {
+                    return <WritingPage onBackToStart={handleBackToStart} />;
+                }
+                
                 if (loading) {
                     return (
                         <div className="min-h-screen flex items-center justify-center bg-white">

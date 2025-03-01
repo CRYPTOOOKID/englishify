@@ -1,0 +1,18 @@
+/* Editor styles */
+[contenteditable=true]:empty:before {
+  content: attr(placeholder);
+  color: #94a3b8;
+  cursor: text;
+}
+
+[contenteditable=true]:focus {
+  outline: none;
+}
+
+/* Make the editor look more like a text area */
+.editor-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+  direction: ltr;
+}
